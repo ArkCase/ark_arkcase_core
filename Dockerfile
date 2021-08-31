@@ -7,21 +7,26 @@ LABEL ORG="Armedia LLC" \
 ARG ARKCASE_VERSION=2021.02
 ARG TOMCAT_VERSION=9.0.50 
 ARG TOMCAT_MAJOR_VERSION=9
+ARG SYMMENTRIC_KEY=9999999999999999999999
 
 ENV NODE_ENV="production" \
-    ARKCAE_APP="/app/arkcase" \
-    JAVA_OPTS="$JAVA_OPTS -Djava.net.preferIPv4Stack=true -Duser.home=${ARKCAE_APP}/data/arkcase-home" \
-    TMP=/app/arkase/tmp \
-    TEMP=/app/arkase/tmp \
-    PATH=$PATH:/app/tomcat/bin
+    ARKCASE_APP="/app/arkcase" \
+    JAVA_OPTS="$JAVA_OPTS -Djava.net.preferIPv4Stack=true -Duser.home=${ARKCASE_APP}/data/arkcase-home" \
+    TMP=/app/arkcase/tmp \
+    TEMP=/app/arkcase/tmp \
+    PATH=$PATH:/app/tomcat/bin \
+    SSL_CERT=/etc/tls/crt/arkcase-server.crt
 WORKDIR /app
-COPY server.xml ./
+COPY server.xml \
+    arkcase-server.crt ./
 # ADD yarn repo and nodejs package
 ADD https://dl.yarnpkg.com/rpm/yarn.repo /etc/yum.repos.d/yarn.repo
 ADD https://archive.apache.org/dist/tomcat/tomcat-${TOMCAT_MAJOR_VERSION}/v${TOMCAT_VERSION}/bin/apache-tomcat-${TOMCAT_VERSION}.tar.gz /app
 RUN useradd --system --user-group --no-create-home tomcat && \
-    mkdir -p ${ARKCAE_APP}/data/arkcase-home && \
-    mkdir -p ${ARKCAE_APP}/common &&\
+    mkdir -p ${ARKCASE_APP}/data/arkcase-home && \
+    mkdir -p ${ARKCASE_APP}/common &&\
+    mkdir -p /etc/tls/private &&\
+    mkdir -p /etc/tls/crt &&\
     yum --assumeyes update; \
     # Nodejs prerequisites to install native-addons from npm
     yum install --assumeyes gcc g++ make openssl wget zip unzip && \
@@ -36,8 +41,19 @@ RUN useradd --system --user-group --no-create-home tomcat && \
     mv server.xml tomcat/conf/ && \
     wget --directory-prefix=./tomcat/webapps/ -O arkcase.war https://github.com/ArkCase/ArkCase/releases/download/${ARKCASE_VERSION}/arkcase-${ARKCASE_VERSION}.war &&\
     chown -R tomcat:tomcat tomcat && \
-    chmod u+x tomcat/bin/*.sh 
-
+    chmod u+x tomcat/bin/*.sh &&\
+    # Add default SSL Keys
+    mv /app/arkcase-server.crt /etc/tls/crt/arkcase-server.crt &&\
+    chmod 644 /etc/tls/crt/* &&\
+    # Encrypt Symmentric Key
+    echo ${SYMMENTRIC_KEY} > ${ARKCASE_APP}/common/symmetricKey.txt &&\
+    openssl x509 -pubkey -noout -in ${SSL_CERT} -noout > ${ARKCASE_APP}/common/arkcase-server.pub &&\
+    openssl rsautl -encrypt -pubin -inkey ${ARKCASE_APP}/common/arkcase-server.pub -in ${ARKCASE_APP}/common/symmetricKey.txt -out ${ARKCASE_APP}/common/symmetricKey.encrypted &&\
+    rm ${ARKCASE_APP}/common/symmetricKey.txt &&\
+    # Remove unwanted package
+    yum -y erase unzip zip wget && \
+    yum clean all
+    
 USER tomcat
 
 EXPOSE 8080
