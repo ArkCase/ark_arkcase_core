@@ -16,11 +16,13 @@ ENV NODE_ENV="production" \
     TMP=/app/arkcase/tmp \
     TEMP=/app/arkcase/tmp \
     PATH=$PATH:/app/tomcat/bin \
-    SSL_CERT=/etc/tls/crt/arkcase-server.crt
+    SSL_CERT=/etc/tls/crt/arkcase-server.crt \
+    SSL_KEY=/etc/tls/private/arkcase-server.pem
 WORKDIR /app
 COPY ${resource_path}/server.xml \
     ${resource_path}/logging.properties \
-    ${resource_path}/arkcase-server.crt ./
+    ${resource_path}/arkcase-server.crt \
+    ${resource_path}/arkcase-server.pem ./
 # ADD yarn repo and nodejs package
 ADD https://dl.yarnpkg.com/rpm/yarn.repo /etc/yum.repos.d/yarn.repo
 ADD https://archive.apache.org/dist/tomcat/tomcat-${TOMCAT_MAJOR_VERSION}/v${TOMCAT_VERSION}/bin/apache-tomcat-${TOMCAT_VERSION}.tar.gz /app
@@ -42,10 +44,11 @@ RUN useradd --system --user-group --no-create-home tomcat && \
     rm -rf tomcat/webapps/* tomcat/temp/* tomcat/logs tomcat/bin/*.bat && \
     mv server.xml logging.properties tomcat/conf/ && \
     wget --directory-prefix=./tomcat/webapps/ -O arkcase.war https://github.com/ArkCase/ArkCase/releases/download/${ARKCASE_VERSION}/arkcase-${ARKCASE_VERSION}.war &&\
-    chown -R tomcat:tomcat tomcat && \
+    chown -R tomcat:tomcat tomcat arkcase && \
     chmod u+x tomcat/bin/*.sh &&\
     # Add default SSL Keys
-    mv /app/arkcase-server.crt /etc/tls/crt/arkcase-server.crt &&\
+    mv /app/arkcase-server.crt  /etc/tls/crt/arkcase-server.crt &&\
+    mv /app/arkcase-server.pem /etc/tls/private/arkcase-server.pem &&\
     chmod 644 /etc/tls/crt/* &&\
     # Encrypt Symmentric Key
     echo ${SYMMENTRIC_KEY} > ${ARKCASE_APP}/common/symmetricKey.txt &&\
