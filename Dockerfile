@@ -9,40 +9,46 @@ ARG TOMCAT_VERSION=9.0.50
 ARG TOMCAT_MAJOR_VERSION=9
 ARG SYMMENTRIC_KEY=9999999999999999999999
 ARG resource_path=artifacts
+ARG MARIADB_CONNECTOR_VERSION=2.2.5
 
 ENV NODE_ENV="production" \
     ARKCASE_APP="/app/arkcase" \
-    JAVA_OPTS="$JAVA_OPTS -Djava.net.preferIPv4Stack=true -Duser.home=${ARKCASE_APP}/data/arkcase-home" \
     TMP=/app/arkcase/tmp \
     TEMP=/app/arkcase/tmp \
-    PATH=$PATH:/app/tomcat/bin \
+    PATH=$PATH:/app/tomcat/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin\
     SSL_CERT=/etc/tls/crt/arkcase-server.crt \
     SSL_KEY=/etc/tls/private/arkcase-server.pem
 WORKDIR /app
 COPY ${resource_path}/server.xml \
     ${resource_path}/logging.properties \
     ${resource_path}/arkcase-server.crt \
-    ${resource_path}/arkcase-server.pem ./
+    ${resource_path}/arkcase-server.pem  ./
+    # ${resource_path}/arkcase.war ./ 
 # ADD yarn repo and nodejs package
 ADD https://dl.yarnpkg.com/rpm/yarn.repo /etc/yum.repos.d/yarn.repo
 ADD https://archive.apache.org/dist/tomcat/tomcat-${TOMCAT_MAJOR_VERSION}/v${TOMCAT_VERSION}/bin/apache-tomcat-${TOMCAT_VERSION}.tar.gz /app
-RUN useradd --system --user-group --no-create-home tomcat && \
+#  \
+RUN useradd  tomcat --system --user-group  && \
     mkdir -p ${ARKCASE_APP}/data/arkcase-home && \
     mkdir -p ${ARKCASE_APP}/common &&\
     mkdir -p /etc/tls/private &&\
     mkdir -p /etc/tls/crt &&\
-    yum --assumeyes update; \
+    yum --assumeyes update && \
     # Nodejs prerequisites to install native-addons from npm
     yum install --assumeyes gcc g++ make openssl wget zip unzip && \
     curl –sL https://rpm.nodesource.com/setup_6.x | bash - && \
-    yum install --assumeyes nodejs && \
+    yum install --assumeyes nodejs &&\
+    npm install -g yarn 
+
     #unpack tomcat tar to tomcat directory
-    tar -xf apache-tomcat-${TOMCAT_VERSION}.tar.gz && \
+RUN tar -xf apache-tomcat-${TOMCAT_VERSION}.tar.gz && \
     mv apache-tomcat-${TOMCAT_VERSION} tomcat && \
     rm apache-tomcat-${TOMCAT_VERSION}.tar.gz &&\
     # Removal of default/unwanted Applications
-    rm -rf tomcat/webapps/* tomcat/temp/* tomcat/logs tomcat/bin/*.bat && \
+    rm -rf tomcat/webapps/* tomcat/temp/* tomcat/bin/*.bat && \
     mv server.xml logging.properties tomcat/conf/ && \
+    mkdir -p /tomcat/logs &&\
+    # cp /app/arkcase.war  ./tomcat/webapps/ && \
     wget --directory-prefix=./tomcat/webapps/ -O arkcase.war https://github.com/ArkCase/ArkCase/releases/download/${ARKCASE_VERSION}/arkcase-${ARKCASE_VERSION}.war &&\
     chown -R tomcat:tomcat tomcat arkcase && \
     chmod u+x tomcat/bin/*.sh &&\
@@ -50,6 +56,7 @@ RUN useradd --system --user-group --no-create-home tomcat && \
     mv /app/arkcase-server.crt  /etc/tls/crt/arkcase-server.crt &&\
     mv /app/arkcase-server.pem /etc/tls/private/arkcase-server.pem &&\
     chmod 644 /etc/tls/crt/* &&\
+    chmod 666 /etc/pki/ca-trust/extracted/java/cacerts &&\
     # Encrypt Symmentric Key
     echo ${SYMMENTRIC_KEY} > ${ARKCASE_APP}/common/symmetricKey.txt &&\
     openssl x509 -pubkey -noout -in ${SSL_CERT} -noout > ${ARKCASE_APP}/common/arkcase-server.pub &&\
@@ -59,10 +66,11 @@ RUN useradd --system --user-group --no-create-home tomcat && \
     yum -y erase unzip zip wget && \
     yum clean all
     
+    
 USER tomcat
 
-EXPOSE 8080
+EXPOSE 8005
 
-CMD ["catalina.sh", "run"]
+CMD ["catalina.sh", "run", "-security"]
 
 
