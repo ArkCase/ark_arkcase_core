@@ -4,7 +4,7 @@ LABEL ORG="Armedia LLC" \
       IMAGE_SOURCE=https://github.com/ArkCase/ark_arkcase_core \
       MAINTAINER="Armedia LLC"
 
-ARG ARKCASE_VERSION=2021.02
+ARG ARKCASE_VERSION=2021.03-RC11
 ARG TOMCAT_VERSION=9.0.50 
 ARG TOMCAT_MAJOR_VERSION=9
 ARG SYMMENTRIC_KEY=9999999999999999999999
@@ -22,13 +22,13 @@ WORKDIR /app
 COPY ${resource_path}/server.xml \
     ${resource_path}/logging.properties \
     ${resource_path}/arkcase-server.crt \
-    ${resource_path}/arkcase-server.pem  ./
-    # ${resource_path}/arkcase.war ./ 
+    ${resource_path}/arkcase-server.pem  \
+    ${resource_path}/arkcase-${ARKCASE_VERSION}.war ./ 
 # ADD yarn repo and nodejs package
 ADD https://dl.yarnpkg.com/rpm/yarn.repo /etc/yum.repos.d/yarn.repo
 ADD https://archive.apache.org/dist/tomcat/tomcat-${TOMCAT_MAJOR_VERSION}/v${TOMCAT_VERSION}/bin/apache-tomcat-${TOMCAT_VERSION}.tar.gz /app
 #  \
-RUN useradd  tomcat --system --user-group  && \
+RUN useradd  tomcat --system --user-group -d /app/tmp/ && \
     mkdir -p ${ARKCASE_APP}/data/arkcase-home && \
     mkdir -p ${ARKCASE_APP}/common &&\
     mkdir -p /etc/tls/private &&\
@@ -48,9 +48,10 @@ RUN tar -xf apache-tomcat-${TOMCAT_VERSION}.tar.gz && \
     rm -rf tomcat/webapps/* tomcat/temp/* tomcat/bin/*.bat && \
     mv server.xml logging.properties tomcat/conf/ && \
     mkdir -p /tomcat/logs &&\
-    # cp /app/arkcase.war  ./tomcat/webapps/ && \
-    wget --directory-prefix=./tomcat/webapps/ -O arkcase.war https://github.com/ArkCase/ArkCase/releases/download/${ARKCASE_VERSION}/arkcase-${ARKCASE_VERSION}.war &&\
-    chown -R tomcat:tomcat tomcat arkcase && \
+    mv arkcase-${ARKCASE_VERSION}.war  ./tomcat/webapps/arkcase.war && \
+    # wget --directory-prefix=./tomcat/webapps/ -O arkcase.war https://github.com/ArkCase/ArkCase/releases/download/${ARKCASE_VERSION}/arkcase-${ARKCASE_VERSION}.war &&\
+    # mv arkcase.war /app/tomcat/ &&\
+    chown -R tomcat:tomcat /app && \
     chmod u+x tomcat/bin/*.sh &&\
     # Add default SSL Keys
     mv /app/arkcase-server.crt  /etc/tls/crt/arkcase-server.crt &&\
@@ -66,11 +67,13 @@ RUN tar -xf apache-tomcat-${TOMCAT_VERSION}.tar.gz && \
     yum -y erase unzip zip wget && \
     yum clean all
     
-    
+RUN yum -y install epel-release epel-testing && \
+    yum install -y tesseract tesseract-osd qpdf ImageMagick ImageMagick-devel && \
+    ln -s /usr/bin/convert /usr/bin/magick &&\
+    ln -s /usr/share/tesseract/tessdata/configs/pdf /usr/share/tesseract/tessdata/configs/PDF &&\
+    yum clean all
 USER tomcat
 
 EXPOSE 8005
 
 CMD ["catalina.sh", "run", "-security"]
-
-
