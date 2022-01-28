@@ -7,7 +7,7 @@ LABEL ORG="Armedia LLC" \
 ARG ARKCASE_VERSION=2021.03-RC11
 ARG TOMCAT_VERSION=9.0.50 
 ARG TOMCAT_MAJOR_VERSION=9
-ARG SYMMENTRIC_KEY=9999999999999999999999
+ARG SYMMETRIC_KEY=9999999999999999999999
 ARG resource_path=artifacts
 ARG MARIADB_CONNECTOR_VERSION=2.2.5
 
@@ -59,7 +59,7 @@ RUN tar -xf apache-tomcat-${TOMCAT_VERSION}.tar.gz && \
     chmod 644 /etc/tls/crt/* &&\
     chmod 666 /etc/pki/ca-trust/extracted/java/cacerts &&\
     # Encrypt Symmentric Key
-    echo ${SYMMENTRIC_KEY} > ${ARKCASE_APP}/common/symmetricKey.txt &&\
+    echo ${SYMMETRIC_KEY} > ${ARKCASE_APP}/common/symmetricKey.txt &&\
     openssl x509 -pubkey -noout -in ${SSL_CERT} -noout > ${ARKCASE_APP}/common/arkcase-server.pub &&\
     openssl rsautl -encrypt -pubin -inkey ${ARKCASE_APP}/common/arkcase-server.pub -in ${ARKCASE_APP}/common/symmetricKey.txt -out ${ARKCASE_APP}/common/symmetricKey.encrypted &&\
     rm ${ARKCASE_APP}/common/symmetricKey.txt &&\
