@@ -16,6 +16,8 @@ jobs:
           aws-region: ${{ secrets.AWS_REGION }}
       - name: download artifacts
         run: ./getArtifact.sh
+        env:
+          ARKCASE_VERSION: 2021.03-RC11
       - name: login to ECR repo
         uses: aws-actions/amazon-ecr-login@v1
         id: login-ecr
@@ -24,6 +26,11 @@ jobs:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           ECR_REPOSITORY: arkcase_core
           IMAGE_TAG: test
+          TOMCAT_VERSION: 9.0.50 
+          TOMCAT_MAJOR_VERSION: 9
+          SYMMETRIC_KEY: 99999999
+          MARIADB_CONNECTOR_VERSION: 2.2.5
+          RESOURCE_PATH: artifacts
         run: |
-          docker build -t  $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+          docker build -t  $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG --build-arg TOMCAT_VERSION --build-arg  TOMCAT_MAJOR_VERSION --build-arg  SYMMETRIC_KEY --build-arg MARIADB_CONNECTOR_VERSION --build-arg RESOURCE_PATH .
           
