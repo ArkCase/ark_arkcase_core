@@ -33,6 +33,6 @@ jobs:
           MARIADB_CONNECTOR_VERSION: 2.2.5
           RESOURCE_PATH: artifacts
         run: |
-          docker build -t  $ECR_REGISTRY/$ECR_REPOSITORY:$ARKCASE_VERSION --build-arg TOMCAT_VERSION --build-arg  TOMCAT_MAJOR_VERSION --build-arg  SYMMETRIC_KEY --build-arg MARIADB_CONNECTOR_VERSION --build-arg RESOURCE_PATH .
+          docker build -t  $ECR_REGISTRY/$ECR_REPOSITORY:$ARKCASE_VERSION --build-arg TOMCAT_VERSION --build-arg ARKCASE_VERSION --build-arg TOMCAT_MAJOR_VERSION --build-arg  SYMMETRIC_KEY --build-arg MARIADB_CONNECTOR_VERSION --build-arg RESOURCE_PATH .
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$ARKCASE_VERSION
           
