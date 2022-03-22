@@ -14,7 +14,7 @@ ARG MARIADB_CONNECTOR_VERSION=2.2.5
 # Build JDK
 #################
 
-ARG JAVA_VERSION="11.0.12.0.7-0.el7_9"
+ARG JAVA_VERSION="1.8.0.322.b06-1.el7_9"
 
 ENV JAVA_HOME=/usr/lib/jvm/java \
     LANG=en_US.UTF-8 \
@@ -22,7 +22,7 @@ ENV JAVA_HOME=/usr/lib/jvm/java \
     LC_ALL=en_US.UTF-8
 
 RUN yum update -y && \
-    yum -y install java-11-openjdk-devel-${JAVA_VERSION} unzip && \
+    yum -y install java-1.8.0-openjdk-devel-${JAVA_VERSION} unzip && \
     $JAVA_HOME/bin/javac -version
 #################
 # Build Arkcase
