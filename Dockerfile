@@ -92,4 +92,4 @@ USER tomcat
 
 EXPOSE 8005
 
-CMD ["catalina.sh", "run", "-security"]
+CMD ["catalina.sh", "run"]
