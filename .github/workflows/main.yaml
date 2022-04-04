@@ -7,7 +7,7 @@ jobs:
     runs-on: ubuntu-latest
     environment: development
     env:
-      ARKCASE_VERSION: 2021.03-RC11
+      ARKCASE_VERSION: 2021.03.07
     steps:
       - uses: actions/checkout@v2
       - name: configure aws credentials
