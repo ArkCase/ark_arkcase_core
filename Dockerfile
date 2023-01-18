@@ -4,7 +4,7 @@ FROM 345280441424.dkr.ecr.ap-south-1.amazonaws.com/ark_base:latest
 #
 # How to build:
 # export SSHPASS=<password for ssh>
-# docker build --build-arg SSHPASS=$SSHPASS -t 345280441424.dkr.ecr.ap-south-1.amazonaws.com/ark_arkcase_core:latest .
+# docker build -t 345280441424.dkr.ecr.ap-south-1.amazonaws.com/ark_arkcase_core:latest .
 # docker push 345280441424.dkr.ecr.ap-south-1.amazonaws.com/ark_arkcase_core:latest
 #
 # How to run: (Docker)
@@ -67,6 +67,8 @@ COPY ${resource_path}/server.xml \
 RUN curl https://project.armedia.com/nexus/repository/arkcase/com/armedia/acm/acm-standard-applications/arkcase/${ARKCASE_VERSION}/arkcase-${ARKCASE_VERSION}.war -o /app/arkcase-${ARKCASE_VERSION}.war
 
 
+RUN curl https://project.armedia.com/nexus/repository/arkcase/com/armedia/arkcase/arkcase-config-core/${ARKCASE_VERSION}/arkcase-config-core-${ARKCASE_VERSION}.zip -o /tmp/arkcase-config-core-${ARKCASE_VERSION}.zip
+
 # ADD yarn repo and nodejs package
 ADD https://dl.yarnpkg.com/rpm/yarn.repo /etc/yum.repos.d/yarn.repo
 ADD https://archive.apache.org/dist/tomcat/tomcat-${TOMCAT_MAJOR_VERSION}/v${TOMCAT_VERSION}/bin/apache-tomcat-${TOMCAT_VERSION}.tar.gz /app
@@ -93,6 +95,7 @@ RUN tar -xf apache-tomcat-${TOMCAT_VERSION}.tar.gz && \
     mkdir -p /tomcat/logs &&\
     mv arkcase-${ARKCASE_VERSION}.war  ./tomcat/webapps/arkcase.war && \
     mkdir -p /app/tmp/.arkcase && \
+    unzip /tmp/arkcase-config-core-2021.03.19.zip -d /app/tmp/.arkcase  &&\
     chown -R tomcat:tomcat /app && \
     chmod u+x tomcat/bin/*.sh &&\
     # Add default SSL Keys
@@ -114,14 +117,11 @@ RUN yum install -y tesseract tesseract-osd qpdf ImageMagick ImageMagick-devel &&
     ln -s /usr/share/tesseract/tessdata/configs/pdf /usr/share/tesseract/tessdata/configs/PDF &&\
     yum update -y && yum clean all && rm -rf /tmp/*
 
-RUN yum -y install sshpass openssh-clients
+#RUN yum -y install sshpass openssh-clients
 
-ARG SSHPASS
-ENV SSHPASS=$SSHPASS
-RUN sshpass -e sftp  -o StrictHostKeyChecking\=no -o UserKnownHostsFile\=/dev/null arkcase@fileshare.armedia.com:from-arkcase/arkcase-config-core-2021.03.19.zip /tmp/arkcase-config-core-2021.03.19.zip
-
-RUN unzip /tmp/arkcase-config-core-2021.03.19.zip -d /app/tmp/.arkcase  &&\
-    chown -R tomcat:tomcat /app/tmp
+#ARG SSHPASS
+#ENV SSHPASS=$SSHPASS
+#RUN sshpass -e sftp  -o StrictHostKeyChecking\=no -o UserKnownHostsFile\=/dev/null arkcase@fileshare.armedia.com:from-arkcase/arkcase-config-core-2021.03.19.zip /tmp/arkcase-config-core-2021.03.19.zip
 
 USER tomcat
 

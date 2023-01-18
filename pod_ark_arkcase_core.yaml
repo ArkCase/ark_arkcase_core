@@ -9,7 +9,7 @@ spec:
   - env:
     image: 345280441424.dkr.ecr.ap-south-1.amazonaws.com/ark_arkcase_core:latest
     imagePullPolicy: Always
-    command: ["/bin/sleep", "180d"]
+    #command: ["/bin/sleep", "180d"]
     name: arkcase
     ports:
     - containerPort: 8080
