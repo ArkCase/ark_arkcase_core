@@ -3,12 +3,12 @@ FROM 345280441424.dkr.ecr.ap-south-1.amazonaws.com/ark_base:latest
 ###########################################################################################################
 #
 # How to build:
-#
-# docker build -t 345280441424.dkr.ecr.ap-south-1.amazonaws.com/ark_arkcase_core:latest .
+# export SSHPASS=<password for ssh>
+# docker build --build-arg SSHPASS=$SSHPASS -t 345280441424.dkr.ecr.ap-south-1.amazonaws.com/ark_arkcase_core:latest .
 # docker push 345280441424.dkr.ecr.ap-south-1.amazonaws.com/ark_arkcase_core:latest
 #
 # How to run: (Docker)
-#
+# 
 # docker run --name ark_arkcase_core -d 345280441424.dkr.ecr.ap-south-1.amazonaws.com/ark_arkcase_core:latest sleep infinity
 # docker exec -it ark_arkcase_core /bin/bash
 # docker stop ark_arkcase_core
@@ -42,21 +42,11 @@ ARG TOMCAT_MAJOR_VERSION=9
 ARG SYMMETRIC_KEY=9999999999999999999999
 ARG resource_path=artifacts
 ARG MARIADB_CONNECTOR_VERSION=2.2.5
-#################
-# Build JDK
-#################
 
-#ARG JAVA_VERSION="1.8.0.322.b06-1.el7_9"
-
-#ENV JAVA_HOME=/usr/lib/jvm/java \
 ENV LANG=en_US.UTF-8 \
     LANGUAGE=en_US:en \
     LC_ALL=en_US.UTF-8
 
-#RUN yum update -y && \
-#    yum -y install java-1.8.0-openjdk-devel-${JAVA_VERSION} unzip && \
-#RUN yum -y install unzip && \
-#    $JAVA_HOME/bin/javac -version
 #################
 # Build Arkcase
 #################
@@ -73,12 +63,8 @@ COPY ${resource_path}/server.xml \
     ${resource_path}/arkcase-server.crt \
     ${resource_path}/arkcase-server.pem ./
 
-#RUN curl ${BUILD_SERVER}:8000/server.xml -o /app/server.xml
-#RUN curl ${BUILD_SERVER}:8000/logging.properties -o /app/logging.properties
-#RUN curl ${BUILD_SERVER}:8000/arkcase-server.crt -o /app/arkcase-server.crt
-#RUN curl ${BUILD_SERVER}:8000/arkcase-server.pem -o /app/arkcase-server.pem
+
 RUN curl https://project.armedia.com/nexus/repository/arkcase/com/armedia/acm/acm-standard-applications/arkcase/${ARKCASE_VERSION}/arkcase-${ARKCASE_VERSION}.war -o /app/arkcase-${ARKCASE_VERSION}.war
-#RUN curl ${BUILD_SERVER}:8000/arkcase-${ARKCASE_VERSION}.war -o /app/arkcase-${ARKCASE_VERSION}.war
 
 
 # ADD yarn repo and nodejs package
@@ -94,11 +80,6 @@ RUN yum -y update && \
     yum --assumeyes update && \
     # Nodejs prerequisites to install native-addons from npm
     yum install --assumeyes gcc gcc-c++ make openssl wget zip unzip 
-#########################################################################
-# This version of NodeJS does not appear to exist anymore
-# TODO: Fix nodejs install
-#########################################################################
-# RUN curl –sL https://rpm.nodesource.com/setup_6.x | bash - 
 RUN yum install --assumeyes nodejs 
 RUN npm install -g yarn 
 
@@ -111,6 +92,7 @@ RUN tar -xf apache-tomcat-${TOMCAT_VERSION}.tar.gz && \
     mv server.xml logging.properties tomcat/conf/ && \
     mkdir -p /tomcat/logs &&\
     mv arkcase-${ARKCASE_VERSION}.war  ./tomcat/webapps/arkcase.war && \
+    mkdir -p /app/tmp/.arkcase && \
     chown -R tomcat:tomcat /app && \
     chmod u+x tomcat/bin/*.sh &&\
     # Add default SSL Keys
@@ -124,16 +106,23 @@ RUN tar -xf apache-tomcat-${TOMCAT_VERSION}.tar.gz && \
     openssl rsautl -encrypt -pubin -inkey ${ARKCASE_APP}/common/arkcase-server.pub -in ${ARKCASE_APP}/common/symmetricKey.txt -out ${ARKCASE_APP}/common/symmetricKey.encrypted &&\
     rm ${ARKCASE_APP}/common/symmetricKey.txt &&\
     # Remove unwanted package
-    yum -y erase unzip zip wget && \
     yum clean all
     
 RUN yum -y install epel-release 
-# RUN yum -y install epel-release epel-testing && \
 RUN yum install -y tesseract tesseract-osd qpdf ImageMagick ImageMagick-devel && \
     ln -s /usr/bin/convert /usr/bin/magick &&\
     ln -s /usr/share/tesseract/tessdata/configs/pdf /usr/share/tesseract/tessdata/configs/PDF &&\
     yum update -y && yum clean all && rm -rf /tmp/*
-    
+
+RUN yum -y install sshpass openssh-clients
+
+ARG SSHPASS
+ENV SSHPASS=$SSHPASS
+RUN sshpass -e sftp  -o StrictHostKeyChecking\=no -o UserKnownHostsFile\=/dev/null arkcase@fileshare.armedia.com:from-arkcase/arkcase-config-core-2021.03.19.zip /tmp/arkcase-config-core-2021.03.19.zip
+
+RUN unzip /tmp/arkcase-config-core-2021.03.19.zip -d /app/tmp/.arkcase  &&\
+    chown -R tomcat:tomcat /app/tmp
+
 USER tomcat
 
 EXPOSE 8005
