@@ -5,9 +5,9 @@ Arkcase Documentation is available at https://www.arkcase.com/
 
 ## How to build:
 
-docker build -t 345280441424.dkr.ecr.ap-south-1.amazonaws.com/ark_arkcase_core:latest .
+docker build -t ark_arkcase_core:latest .
 
-docker push 345280441424.dkr.ecr.ap-south-1.amazonaws.com/ark_arkcase_core:latest
+Repository pushes occur automatically when code is checked in.
 
 ## How to Run:
 
