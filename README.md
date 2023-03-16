@@ -1,4 +1,7 @@
-# ark_core
+# Arkcase Core
+A platform-agnostic Case Management solution.
+
+Arkcase Documentation is available at https://www.arkcase.com/
 
 ## How to build:
 
